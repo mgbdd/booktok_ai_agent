@@ -17,23 +17,77 @@ class BaseAIAgent(ABC):
         # !!! для каждого наследника добавить llm
         self.llm = None
         
-        #TODO: TavilySearch tool, api_key в .env
-        #TODO: generate description tool
+        #TODO: TavilySearch tool, api_key в .env (надо ли??)
         
+        self.generate_description_tool = tool(self.generate_description)
         self.generate_ideas_tool = tool(self.generate_ideas) 
         self.make_json_answer_tool = tool(self.make_json_answer)
 
         self.agent = self.build_grapg()
+    
 
-    #TODO + написать промпт (?)
-    def _call_tavily_search(self, state : AgentState) -> AgentState:
-        return
+    def _call_tavily_search(self, state: AgentState) -> AgentState:
+        try:
+            search_tool = TavilySearch(api_key=os.getenv("TAVILY_API_KEY"))
+            name = state['book_name']
+            author = state['author']
+            query = f"Описание книги {name} автора {author}"
+            summary = search_tool.run(query)
 
-    #TODO + написать промпт
-    def _generate_description(self, query : str) -> str:
-        return
-    def _call_generate_description(self, state : AgentState) -> AgentState:
-        return
+            answer = ''
+            for result in summary['results']:
+                answer = answer + ' ' + result['content']
+
+            return {
+                "messages": [AIMessage(content=f"Найдены данные Tavily")],
+                "summary": answer
+            }
+        except Exception as e:
+            print(f"Ошибка в _call_tavily_search: {e}")
+            return {
+                "messages": [AIMessage(content="Ошибка при поиске информации о книге")],
+                "summary": None
+            }
+
+    
+    def _generate_description(self, summary: str, book: str, author: str) -> str:
+  
+        try:
+            system_template = get_prompt(os.getenv("SUMMARY_PROMPT"))
+
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_template),
+                ("user", f"Книга {book} автора {author}. Информация из Интернета: {summary}")
+            ])
+
+            chain = prompt | self.llm | StrOutputParser()
+            result = chain.invoke({"summary": summary, "book": book, "author": author})
+            return result
+        except Exception as e:
+            print(f"Ошибка в _generate_description: {e}")
+            return "Описание не удалось сгенерировать."
+
+
+    def _call_generate_description(self,  state : AgentState) -> AgentState:
+        try:
+            book = state["book_name"]
+            author = state["author"]
+            summary = state["summary"]
+            result = self.generate_description_tool.invoke({"summary" : summary, "book" : book, "author" : author})
+
+            if result == 'Описание не удалось сгенерировать.':
+                raise Exception
+
+            return {
+                "messages": [AIMessage(content="Сгенерировано описание")],
+                "ideas" : result
+            }
+        except Exception as e:
+            print(f"Ошибка при вызове _call_generate_description: {e}")
+            return {
+                "messages": [AIMessage(content="Попытка сгенерировать описание")],
+                "ideas": None
+            }
     
     def _generate_ideas(self, book : str, author : str,  summary : str) -> str:
         """
