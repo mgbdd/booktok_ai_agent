@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from abc import ABC, abstractmethod
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import StateGraph, END
@@ -17,13 +17,11 @@ class BaseAIAgent(ABC):
         # !!! для каждого наследника добавить llm
         self.llm = None
         
-        #TODO: TavilySearch tool, api_key в .env (надо ли??)
-        
-        self.generate_description_tool = tool(self.generate_description)
-        self.generate_ideas_tool = tool(self.generate_ideas) 
-        self.make_json_answer_tool = tool(self.make_json_answer)
+        self.generate_description_tool = tool(self._generate_description)
+        self.generate_ideas_tool = tool(self._generate_ideas) 
+        self.make_json_answer_tool = tool(self._make_json_answer)
 
-        self.agent = self.build_grapg()
+        self.agent = self._build_grapg()
     
 
     def _call_tavily_search(self, state: AgentState) -> AgentState:
@@ -51,6 +49,10 @@ class BaseAIAgent(ABC):
 
     
     def _generate_description(self, summary: str, book: str, author: str) -> str:
+        """
+        This tool generates a short and coherent description of the given book
+        based on web search summary data.
+        """
   
         try:
             system_template = get_prompt(os.getenv("SUMMARY_PROMPT"))
@@ -80,13 +82,13 @@ class BaseAIAgent(ABC):
 
             return {
                 "messages": [AIMessage(content="Сгенерировано описание")],
-                "ideas" : result
+                "summary" : result
             }
         except Exception as e:
             print(f"Ошибка при вызове _call_generate_description: {e}")
             return {
                 "messages": [AIMessage(content="Попытка сгенерировать описание")],
-                "ideas": None
+                "summary": None
             }
     
     def _generate_ideas(self, book : str, author : str,  summary : str) -> str:
@@ -98,7 +100,7 @@ class BaseAIAgent(ABC):
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_temlate),
-                ("user", "{book}, {author}, {summary}")
+                ("user", f"{book}, {author}, {summary}")
             ]
         )
         chain = prompt | self.llm | StrOutputParser()
@@ -122,21 +124,37 @@ class BaseAIAgent(ABC):
                 "ideas": None
             }
     
-    @abstractmethod
-    def _make_json_answer(self, summary : str, ideas : str) -> dict:
-        pass
+    def _make_json_answer(self, book : str, author : str, summary : str, ideas : str) -> dict:
+        """
+        This tool unites previous results into one json answer
+        """
+
+        system_template = get_prompt(os.getenv("JSON_PROMPT"))
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_template),
+                ("user", f"Книга: {book}; Автор: {author}; Краткое содержание:{summary} \n {ideas}")
+                # ("user", f"{summary}, {ideas}")
+            ]
+        )
+        chain = prompt | self.llm | JsonOutputParser()
+        result = chain.invoke({"summary" : summary, "ideas" : ideas})
+        return result
     
     def _call_make_json_answer(self, state : AgentState) -> AgentState:
         try:
+            book = state["book_name"]
+            author = state["author"]
             summary = state["summary"]
             ideas = state["ideas"]
-            result = self.make_json_answer_tool.invoke({"summary" : summary, "ideas" : ideas})
+            result = self.make_json_answer_tool.invoke({"book": book, "author": author, "summary" : summary, "ideas" : ideas})
+
             return {
                 "messages" : [AIMessage(content="Сформирован JSON ответ")],
                 "full_answer": result
             }
         except Exception as e:
-            print(f"Ошибка при вызове _call_make_json_answer")
+            print(f"Ошибка при вызове _call_make_json_answer: {e}")
             return {
                 "messages": [AIMessage(content="Попытка формирования единого JSON ответа")], 
                 "full_answer": None
