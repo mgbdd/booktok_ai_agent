@@ -1,24 +1,29 @@
-from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
+from base_ai_agent import BaseAIAgent
 
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dotenv_path = os.path.join(base_dir, ".env")
 
-'''
+load_dotenv(dotenv_path)
 
-вставить в готового gemini агента 
+class GeminiAIAgent(BaseAIAgent):
+    def __init__(self):
+        super().__init__()
+        self.llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        temperature=0,
+        max_tokens=None,
+        timeout=None,
+        max_retries=2,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
 
-def _make_json_answer(self, summary : str, ideas : str) -> str:
-        """
-        This tool unites previous results into one json answer
-        """
-        system_template = get_prompt(os.getenv("JSON_PROMPT"))
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_template),
-                ("user", "{summary}, {ideas}")
-            ]
-        )
-        chain = prompt | self.llm | JsonOutputParser()
-        result = chain.invoke({"summary" : summary, "ideas" : ideas})
-        return result
-    
+if __name__ == "__main__":
+    agent = GeminiAIAgent()
 
-'''
+    book_data = {"Сила привычки": "Чарльз Дахигг"}
+
+    result = agent.run(book_data)
+    print(result)

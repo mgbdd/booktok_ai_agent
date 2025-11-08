@@ -10,6 +10,7 @@ from utils import AgentState, get_prompt
 from langchain_tavily import TavilySearch
 from typing import List
 
+
 load_dotenv()
 
 class BaseAIAgent(ABC):
@@ -26,44 +27,51 @@ class BaseAIAgent(ABC):
 
     def _call_tavily_search(self, state: AgentState) -> AgentState:
         try:
-            search_tool = TavilySearch(api_key=os.getenv("TAVILY_API_KEY"))
+            search_tool = TavilySearch(api_key=os.getenv("TAVILY_API_KEY"), max_results=5)
             name = state['book_name']
             author = state['author']
-            query = f"Описание книги {name} автора {author}"
-            summary = search_tool.run(query)
-
+            summary_query = f"Описание книги {name} автора {author}"
+            summary = search_tool.invoke(summary_query)
             answer = ''
             for result in summary['results']:
-                answer = answer + ' ' + result['content']
+                answer = answer + '\n' + result['content']
+
+            genre_query = f"Жанр книги {name} автора {author}"
+            genre = search_tool.invoke(genre_query)
+            genre_answer = ''
+            for result in genre['results']:
+                genre_answer = genre_answer + '\n' + result['content']
+
 
             return {
                 "messages": [AIMessage(content=f"Найдены данные Tavily")],
+                "genre" : genre_answer,
                 "summary": answer
             }
         except Exception as e:
             print(f"Ошибка в _call_tavily_search: {e}")
             return {
                 "messages": [AIMessage(content="Ошибка при поиске информации о книге")],
+                "genre" : None,
                 "summary": None
             }
 
     
-    def _generate_description(self, summary: str, book: str, author: str) -> str:
+    def _generate_description(self, summary: str, book: str, author: str, genre : str) -> str:
         """
-        This tool generates a short and coherent description of the given book
-        based on web search summary data.
+        Эта функция генерирует жанр и краткое описание заданной книги, которое
+        соответствует данным, найденным в интернете
         """
-  
         try:
             system_template = get_prompt(os.getenv("SUMMARY_PROMPT"))
 
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_template),
-                ("user", f"Книга {book} автора {author}. Информация из Интернета: {summary}")
+                ("user", f"Книга {book} автора {author}. Информация о жанре: {genre}. Информация о книге из Интернета: {summary}")
             ])
 
             chain = prompt | self.llm | StrOutputParser()
-            result = chain.invoke({"summary": summary, "book": book, "author": author})
+            result = chain.invoke({"book": book, "author": author, "genre": genre, "summary": summary})
             return result
         except Exception as e:
             print(f"Ошибка в _generate_description: {e}")
@@ -75,32 +83,33 @@ class BaseAIAgent(ABC):
             book = state["book_name"]
             author = state["author"]
             summary = state["summary"]
-            result = self.generate_description_tool.invoke({"summary" : summary, "book" : book, "author" : author})
-
-            if result == 'Описание не удалось сгенерировать.':
+            genre = state["genre"]
+            full_result = self.generate_description_tool.invoke({"summary" : summary, "book" : book, "author" : author, "genre" : genre})            
+            if full_result == 'Описание не удалось сгенерировать.':
                 raise Exception
-
+            new_genre, new_summary = full_result.split(sep=";")
             return {
                 "messages": [AIMessage(content="Сгенерировано описание")],
-                "summary" : result
+                "genre" : new_genre,
+                "summary" : new_summary
             }
         except Exception as e:
             print(f"Ошибка при вызове _call_generate_description: {e}")
             return {
                 "messages": [AIMessage(content="Попытка сгенерировать описание")],
+                "genre" : None,
                 "summary": None
             }
     
     def _generate_ideas(self, book : str, author : str,  summary : str) -> str:
         """
-        This tool generate a list of ideas that \n
-        reflect the content of the given book
+        Эта функция генерирует список ключевых идей книги
         """
         system_temlate = get_prompt(os.getenv("IDEAS_PROMPT"))
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_temlate),
-                ("user", f"{book}, {author}, {summary}")
+                ("user", f"Книга: {book}, автор: {author}, краткое содержание: {summary}")
             ]
         )
         chain = prompt | self.llm | StrOutputParser()
@@ -124,21 +133,19 @@ class BaseAIAgent(ABC):
                 "ideas": None
             }
     
-    def _make_json_answer(self, book : str, author : str, summary : str, ideas : str) -> dict:
+    def _make_json_answer(self, book : str, author : str, genre : str, summary : str, ideas : str) -> dict:
         """
-        This tool unites previous results into one json answer
+        Эта функция объединяет предыдущие результаты в единый json ответ
         """
-
         system_template = get_prompt(os.getenv("JSON_PROMPT"))
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_template),
-                ("user", f"Книга: {book}; Автор: {author}; Краткое содержание:{summary} \n {ideas}")
-                # ("user", f"{summary}, {ideas}")
+                ("user", "{book}, {author}, {genre}, {summary}, {ideas}")
             ]
         )
         chain = prompt | self.llm | JsonOutputParser()
-        result = chain.invoke({"summary" : summary, "ideas" : ideas})
+        result = chain.invoke({"book" : book, "author" : author, "genre" : genre, "summary" : summary, "ideas" : ideas})
         return result
     
     def _call_make_json_answer(self, state : AgentState) -> AgentState:
@@ -147,8 +154,8 @@ class BaseAIAgent(ABC):
             author = state["author"]
             summary = state["summary"]
             ideas = state["ideas"]
-            result = self.make_json_answer_tool.invoke({"book": book, "author": author, "summary" : summary, "ideas" : ideas})
-
+            genre = state["genre"]
+            result = self.make_json_answer_tool.invoke({"book": book, "author": author, "genre": genre, "summary" : summary, "ideas" : ideas})
             return {
                 "messages" : [AIMessage(content="Сформирован JSON ответ")],
                 "full_answer": result
@@ -182,6 +189,7 @@ class BaseAIAgent(ABC):
             "messages": [HumanMessage(content=book)],
             "book_name": book, 
             "author": author, 
+            "genre" : None, 
             "summary": None, 
             "ideas": None,
             "full_answer": None

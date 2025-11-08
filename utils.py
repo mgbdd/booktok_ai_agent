@@ -19,7 +19,7 @@ def get_prompt(filename):
         print(f"Файл '{filename}' не был найден.")
         return ""
     except Exception as e:
-        print("Ошибка при чтении файла:", e)
+        print(f"Ошибка при чтении файла {filename}: {e}")
         return ""
 
 class FullAnswer(TypedDict):
@@ -36,6 +36,7 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], lambda x, y: x + y] #сообщения о работе агента
     book_name: str
     author : str
+    genre : str
     summary : Optional[str] #общая json строка, включающая и название, и автора, и жанр, и содержание
     ideas: Optional[str]
     full_answer: Optional[FullAnswer]
