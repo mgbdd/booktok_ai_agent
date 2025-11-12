@@ -200,4 +200,4 @@ class BaseAIAgent(ABC):
             return full_result
         except Exception as e:
             print(f"Ошибка при вызове agent.invoke: {e}")  
-            return {}
+            return None

@@ -1,0 +1,42 @@
+[
+    {
+        "book": {
+            "title": "Сила привычки",
+            "authors": [{
+                "first_name": "Чарльз",
+                "last_name": "Дахигг",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Государь",
+            "authors": [{
+                "first_name": "Никколо",
+                "last_name": "Макиавелли",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Искусство любить",
+            "authors": [{
+                "first_name": "Эрих",
+                "last_name": "Фромм",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Самый богатый человек в Вавилоне",
+            "authors": [{
+                "first_name": "Джордж",
+                "last_name": "Клейсон",
+                "third_name": "Самюэль"
+            }]
+        }
+    }
+]
