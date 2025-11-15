@@ -1,19 +1,12 @@
 import json
-import requests
-from typing import List, Dict, Any
-import tqdm
 from agents.mistral_agent import MistralAIAgent
-
-def load_books(path: str) -> List[Dict[str, Any]]:
-
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if not isinstance(data, list):
-        raise ValueError("Файл должен содержать список JSON-объектов")
-    return data
+from agents.gemini_agent import GeminiAIAgent
+import os
 
 def get_authors(authors):
+    """
+    Парсинг авторов книг из json
+    """
     if authors is None or authors == []:
         return "Неизвестно"
     else:
@@ -32,9 +25,22 @@ def get_authors(authors):
                 author_list = author_list + f'{first_name} {middle_name} {last_name}, '
         return author_list
 
+def init_agent():
+    provider = os.getenv("AI_PROVIDER")
+    match provider:
+        case "mistral":
+            return MistralAIAgent()
+        case "google":
+            return GeminiAIAgent()
+        case _:
+            return MistralAIAgent()
+
 def get_ai_data(title, authors):
+    """
+    Вызов AI-агента
+    """
     try:
-        agent = MistralAIAgent()
+        agent = init_agent()
         book_data = {title: authors}
         result = agent.run(book_data)
         if result is None:
@@ -45,7 +51,10 @@ def get_ai_data(title, authors):
         return None
 
 
-def get_book_data(books):
+def process_books(books):
+    """
+    Главная функция генерации контента по книгам
+    """
     result_data = []
     for book in books:
 
@@ -70,21 +79,14 @@ def get_book_data(books):
                     }   
                 }   
             )
-            print('-')
+            #print('-')
         else:
             result_data.append(result)
-            print('+')
+            #print('+')
         
     return result_data
 
-def send_data_to_file (book_data, file_path):
+def save_book_content (book_data, file_path):
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(book_data, f, indent=4, ensure_ascii=False)   
         
-
-if __name__ == "__main__":
-    INPUT_FILE_PATH = "input_books.json"
-    OUTPUT_FILE_PATH = "books.json"
-    data = load_books(INPUT_FILE_PATH)
-    book_data = get_book_data(data)
-    send_data_to_file(book_data, OUTPUT_FILE_PATH)

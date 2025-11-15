@@ -1,7 +1,17 @@
-from typing import List, Annotated, TypedDict, Optional
+from typing import List, Annotated, TypedDict, Optional, Dict, Any
 from langchain_core.messages import BaseMessage
 import os
 from pathlib import Path
+import json
+
+def load_books(path: str) -> List[Dict[str, Any]]:
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if not isinstance(data, list):
+        raise ValueError("Файл должен содержать список JSON-объектов")
+    return data
 
 def get_filepath(filename, current_dir=Path(__file__).parent.resolve()):
     for root, dirs, files in os.walk(current_dir):
@@ -30,7 +40,7 @@ class FullAnswer(TypedDict):
     Author: str
     Genre: str
     Summary: str
-    Ideas: List[str] # Ключ "Ideas" должен содержать List из str
+    Ideas: List[str] 
 
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], lambda x, y: x + y] #сообщения о работе агента
