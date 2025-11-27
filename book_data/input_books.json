@@ -1,41 +1,121 @@
 [
     {
         "book": {
-            "title": "Сила привычки",
+            "title": "Тонкое искусство пофигизма",
             "authors": [{
-                "first_name": "Чарльз",
-                "last_name": "Дахигг",
+                "first_name": "Марк",
+                "last_name": "Мэнсон",
                 "third_name": null
             }]
         }
     },
     {
         "book": {
-            "title": "Государь",
+            "title": "7 навыков высокоэффективных людей",
             "authors": [{
-                "first_name": "Никколо",
-                "last_name": "Макиавелли",
+                "first_name": "Стивен",
+                "last_name": "Кови",
                 "third_name": null
             }]
         }
     },
     {
         "book": {
-            "title": "Искусство любить",
+            "title": "Атомные привычки",
             "authors": [{
-                "first_name": "Эрих",
-                "last_name": "Фромм",
+                "first_name": "Джеймс",
+                "last_name": "Клир",
                 "third_name": null
             }]
         }
     },
     {
         "book": {
-            "title": "Самый богатый человек в Вавилоне",
+            "title": "Думай медленно… решай быстро",
             "authors": [{
-                "first_name": "Джордж",
-                "last_name": "Клейсон",
-                "third_name": "Самюэль"
+                "first_name": "Даниэль",
+                "last_name": "Канеман",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Психология влияния",
+            "authors": [{
+                "first_name": "Роберт",
+                "last_name": "Чалдини",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Как завоёвывать друзей и оказывать влияние на людей",
+            "authors": [{
+                "first_name": "Дейл",
+                "last_name": "Карнеги",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Наедине с собой",
+            "authors": [{
+                "first_name": "Марк",
+                "last_name": "Аврелий",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Письма к Луцилию",
+            "authors": [{
+                "first_name": "Сенека",
+                "last_name": null,
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Антихрупкость",
+            "authors": [{
+                "first_name": "Нассим",
+                "last_name": "Талеб",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Черный лебедь",
+            "authors": [{
+                "first_name": "Нассим",
+                "last_name": "Талеб",
+                "third_name": null
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "Сапиенс: Краткая история человечества",
+            "authors": [{
+                "first_name": "Юваль",
+                "last_name": "Харари",
+                "third_name": "Ной"
+            }]
+        }
+    },
+    {
+        "book": {
+            "title": "21 урок для XXI века",
+            "authors": [{
+                "first_name": "Юваль",
+                "last_name": "Харари",
+                "third_name": "Ной"
             }]
         }
     }

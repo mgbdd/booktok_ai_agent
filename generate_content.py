@@ -13,11 +13,17 @@ def get_authors(authors):
         author_list = ""
         for author in authors:
             first_name = author["first_name"]
+
             if author["third_name"] == None:
                 middle_name = ''
             else:
                 middle_name = author["third_name"]
-            last_name = author["last_name"]
+
+            if author["last_name"] == None:
+                last_name = ''
+            else:
+                last_name = author["last_name"]
+            # last_name = author["last_name"]
 
             if author == authors[-1]:
                 author_list = author_list + f'{first_name} {middle_name} {last_name}'
@@ -82,7 +88,7 @@ def process_books(books):
             #print('-')
         else:
             result_data.append(result)
-            #print('+')
+            print('+')
         
     return result_data
 
